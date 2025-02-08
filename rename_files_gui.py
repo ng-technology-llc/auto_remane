@@ -99,7 +99,7 @@ class FileRenamerGUI:
         self.root.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
         self.root.resizable(True, True)
         
-        self.update_title()  # 更新标题
+        self.update_title()
         
         # 使主窗口可调整大小
         self.root.grid_rowconfigure(0, weight=1)
@@ -110,11 +110,10 @@ class FileRenamerGUI:
         main_frame.grid(row=0, column=0, sticky="nsew")
         
         # 语言切换按钮
-        lang_btn = ttk.Button(main_frame, 
+        self.lang_btn = ttk.Button(main_frame, 
                             text=self.texts[self.current_lang]['switch_lang'],
                             command=self.switch_language)
-        lang_btn.grid(row=0, column=0, sticky="e", pady=5)
-        self.lang_btn = lang_btn
+        self.lang_btn.grid(row=0, column=0, sticky="e", pady=5)
         
         # 文件夹选择区域
         folder_frame = ttk.Frame(main_frame)
@@ -124,25 +123,35 @@ class FileRenamerGUI:
         folder_entry = ttk.Entry(folder_frame, textvariable=self.folder_path)
         folder_entry.grid(row=0, column=0, sticky="ew", padx=(0, 5))
         
-        browse_btn = ttk.Button(folder_frame, text="选择文件夹", command=self.browse_folder)
-        browse_btn.grid(row=0, column=1)
+        self.browse_btn = ttk.Button(folder_frame, 
+                                   text=self.texts[self.current_lang]['select_folder'], 
+                                   command=self.browse_folder)
+        self.browse_btn.grid(row=0, column=1)
         
         folder_frame.grid_columnconfigure(0, weight=1)
         
         # 命名模式区域
-        pattern_frame = ttk.LabelFrame(main_frame, text="命名设置", padding="5")
-        pattern_frame.grid(row=2, column=0, sticky="ew", pady=5)
+        self.pattern_frame = ttk.LabelFrame(main_frame, 
+                                          text=self.texts[self.current_lang]['naming_settings'], 
+                                          padding="5")
+        self.pattern_frame.grid(row=2, column=0, sticky="ew", pady=5)
         
         # 文件名模式输入
-        pattern_input_frame = ttk.Frame(pattern_frame)
+        pattern_input_frame = ttk.Frame(self.pattern_frame)
         pattern_input_frame.grid(row=0, column=0, columnspan=4, sticky="ew", padx=5, pady=5)
         
-        ttk.Label(pattern_input_frame, text="文件名模式:").grid(row=0, column=0, padx=(0,5))
+        self.pattern_label = ttk.Label(pattern_input_frame, 
+                                     text=self.texts[self.current_lang]['filename_pattern'])
+        self.pattern_label.grid(row=0, column=0, padx=(0,5))
+        
         self.pattern = tk.StringVar(value="file_{:03d}")
         pattern_entry = ttk.Entry(pattern_input_frame, textvariable=self.pattern)
         pattern_entry.grid(row=0, column=1, sticky="ew", padx=5)
         
-        ttk.Label(pattern_input_frame, text="起始编号:").grid(row=0, column=2, padx=5)
+        self.start_num_label = ttk.Label(pattern_input_frame, 
+                                       text=self.texts[self.current_lang]['start_number'])
+        self.start_num_label.grid(row=0, column=2, padx=5)
+        
         self.start_num = tk.StringVar(value="1")
         start_num_entry = ttk.Entry(pattern_input_frame, textvariable=self.start_num, width=8)
         start_num_entry.grid(row=0, column=3, padx=(0,5))
@@ -150,39 +159,52 @@ class FileRenamerGUI:
         pattern_input_frame.grid_columnconfigure(1, weight=1)
         
         # 帮助信息
-        help_frame = ttk.Frame(pattern_frame)
+        help_frame = ttk.Frame(self.pattern_frame)
         help_frame.grid(row=1, column=0, columnspan=4, sticky="ew", padx=5)
         
-        help_label = ttk.Label(help_frame, text=self.texts[self.current_lang]['help_text'], justify="left")
-        help_label.grid(row=0, column=0, sticky="w")
+        self.help_label = ttk.Label(help_frame, 
+                                  text=self.texts[self.current_lang]['help_text'], 
+                                  justify="left")
+        self.help_label.grid(row=0, column=0, sticky="w")
         
         # 预览区域
-        preview_frame = ttk.LabelFrame(main_frame, text="预览", padding="5")
-        preview_frame.grid(row=3, column=0, sticky="nsew", pady=5)
+        self.preview_frame = ttk.LabelFrame(main_frame, 
+                                          text=self.texts[self.current_lang]['preview'], 
+                                          padding="5")
+        self.preview_frame.grid(row=3, column=0, sticky="nsew", pady=5)
         
         # 创建预览列表
-        self.preview_tree = ttk.Treeview(preview_frame, columns=("原文件名", "新文件名"), show="headings")
-        self.preview_tree.heading("原文件名", text="原文件名")
-        self.preview_tree.heading("新文件名", text="新文件名")
+        self.preview_tree = ttk.Treeview(self.preview_frame, 
+                                       columns=(self.texts[self.current_lang]['original_name'], 
+                                              self.texts[self.current_lang]['new_name']), 
+                                       show="headings")
+        self.preview_tree.heading(self.texts[self.current_lang]['original_name'], 
+                                text=self.texts[self.current_lang]['original_name'])
+        self.preview_tree.heading(self.texts[self.current_lang]['new_name'], 
+                                text=self.texts[self.current_lang]['new_name'])
         self.preview_tree.grid(row=0, column=0, sticky="nsew")
         
         # 添加滚动条
-        scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self.preview_tree.yview)
+        scrollbar = ttk.Scrollbar(self.preview_frame, orient=tk.VERTICAL, command=self.preview_tree.yview)
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.preview_tree.configure(yscrollcommand=scrollbar.set)
         
-        preview_frame.grid_columnconfigure(0, weight=1)
-        preview_frame.grid_rowconfigure(0, weight=1)
+        self.preview_frame.grid_columnconfigure(0, weight=1)
+        self.preview_frame.grid_rowconfigure(0, weight=1)
         
         # 按钮区域
         btn_frame = ttk.Frame(main_frame)
         btn_frame.grid(row=4, column=0, sticky="ew", pady=5)
         
-        preview_btn = ttk.Button(btn_frame, text="预览", command=self.preview_rename)
-        preview_btn.pack(side=tk.LEFT, padx=5)
+        self.preview_btn = ttk.Button(btn_frame, 
+                                    text=self.texts[self.current_lang]['preview'], 
+                                    command=self.preview_rename)
+        self.preview_btn.pack(side=tk.LEFT, padx=5)
         
-        execute_btn = ttk.Button(btn_frame, text="执行重命名", command=self.execute_rename)
-        execute_btn.pack(side=tk.LEFT, padx=5)
+        self.execute_btn = ttk.Button(btn_frame, 
+                                    text=self.texts[self.current_lang]['execute'], 
+                                    command=self.execute_rename)
+        self.execute_btn.pack(side=tk.LEFT, padx=5)
         
         # 配置主框架的网格权重
         main_frame.grid_columnconfigure(0, weight=1)
@@ -196,9 +218,28 @@ class FileRenamerGUI:
         """更新所有UI元素的文本"""
         self.update_title()
         self.lang_btn.configure(text=self.texts[self.current_lang]['switch_lang'])
-        # 更新其他UI元素的文本
-        # ... (更新所有标签、按钮等的文本)
+        self.browse_btn.configure(text=self.texts[self.current_lang]['select_folder'])
+        self.pattern_frame.configure(text=self.texts[self.current_lang]['naming_settings'])
+        self.pattern_label.configure(text=self.texts[self.current_lang]['filename_pattern'])
+        self.start_num_label.configure(text=self.texts[self.current_lang]['start_number'])
+        self.help_label.configure(text=self.texts[self.current_lang]['help_text'])
+        self.preview_frame.configure(text=self.texts[self.current_lang]['preview'])
+        self.preview_btn.configure(text=self.texts[self.current_lang]['preview'])
+        self.execute_btn.configure(text=self.texts[self.current_lang]['execute'])
         
+        # Update treeview
+        old_columns = self.preview_tree["columns"]
+        self.preview_tree.configure(columns=(self.texts[self.current_lang]['original_name'], 
+                                           self.texts[self.current_lang]['new_name']))
+        self.preview_tree.heading(self.texts[self.current_lang]['original_name'], 
+                                text=self.texts[self.current_lang]['original_name'])
+        self.preview_tree.heading(self.texts[self.current_lang]['new_name'], 
+                                text=self.texts[self.current_lang]['new_name'])
+        
+        # Refresh preview if there are items
+        if self.preview_tree.get_children():
+            self.preview_rename()
+
     def update_title(self):
         self.root.title(self.texts[self.current_lang]['title'])
 
