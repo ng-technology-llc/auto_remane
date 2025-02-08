@@ -7,20 +7,118 @@ from tkinter import filedialog, messagebox, ttk
 class FileRenamerGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("文件批量重命名工具")
-        self.root.geometry("800x600")  # 增加默认窗口大小
+        
+        # 语言设置
+        self.current_lang = 'zh'  # 默认中文
+        self.texts = {
+            'zh': {
+                'title': "文件批量重命名工具",
+                'select_folder': "选择文件夹",
+                'naming_settings': "命名设置",
+                'filename_pattern': "文件名模式:",
+                'start_number': "起始编号:",
+                'preview': "预览",
+                'original_name': "原文件名",
+                'new_name': "新文件名",
+                'execute': "执行重命名",
+                'help_text': (
+                    "规则:\n"
+                    "1. 直接输入文件名，将自动添加序号\n"
+                    "   例如: 'photo' → photo1, photo2, ...\n"
+                    "2. 使用格式化选项自定义序号格式:\n"
+                    "   - {: d}  → 1, 2, 3, ...\n"
+                    "   - {:02d} → 01, 02, 03, ...\n"
+                    "   - {:03d} → 001, 002, 003, ...\n"
+                    "   例如: 'photo_{:03d}' → photo_001, photo_002, ..."
+                ),
+                'switch_lang': "Switch to English",
+                'warning': "警告",
+                'error': "错误",
+                'success': "成功",
+                'select_folder_prompt': "请先选择文件夹！",
+                'preview_first': "请先预览更改！",
+                'confirm_rename': "确定要执行重命名操作吗？此操作不可撤销！",
+                'rename_complete': "文件重命名完成！",
+                'invalid_start_num': "起始编号无效",
+                'empty_filename': "文件名不能为空",
+                'filename_error': "文件名格式错误",
+                'invalid_chars': "生成的文件名包含非法字符",
+                'name_conflict': "检测到文件名冲突",
+                'file_exists': "目标文件已存在",
+                'rename_error': "重命名时出错",
+            },
+            'en': {
+                'title': "Batch File Renamer",
+                'select_folder': "Select Folder",
+                'naming_settings': "Naming Settings",
+                'filename_pattern': "Filename Pattern:",
+                'start_number': "Start Number:",
+                'preview': "Preview",
+                'original_name': "Original Name",
+                'new_name': "New Name",
+                'execute': "Execute",
+                'help_text': (
+                    "Filename Rules:\n"
+                    "1. Enter filename directly, numbers will be added automatically\n"
+                    "   Example: 'photo' → photo1, photo2, ...\n"
+                    "2. Use format specifiers for custom numbering:\n"
+                    "   - {: d}  → 1, 2, 3, ...\n"
+                    "   - {:02d} → 01, 02, 03, ...\n"
+                    "   - {:03d} → 001, 002, 003, ...\n"
+                    "   Example: 'photo_{:03d}' → photo_001, photo_002, ..."
+                ),
+                'switch_lang': "切换到中文",
+                'warning': "Warning",
+                'error': "Error",
+                'success': "Success",
+                'select_folder_prompt': "Please select a folder first!",
+                'preview_first': "Please preview changes first!",
+                'confirm_rename': "Are you sure you want to rename? This action cannot be undone!",
+                'rename_complete': "File renaming completed!",
+                'invalid_start_num': "Invalid start number",
+                'empty_filename': "Filename cannot be empty",
+                'filename_error': "Filename format error",
+                'invalid_chars': "Generated filename contains invalid characters",
+                'name_conflict': "Filename conflict detected",
+                'file_exists': "Target file already exists",
+                'rename_error': "Error occurred during renaming",
+            }
+        }
+        
+        self.init_ui()
+
+    def init_ui(self):
+        # 设置窗口大小和位置
+        window_width = 800
+        window_height = 600
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        center_x = int((screen_width - window_width) / 2)
+        center_y = int((screen_height - window_height) / 2)
+        
+        self.root.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
+        self.root.resizable(True, True)
+        
+        self.update_title()  # 更新标题
         
         # 使主窗口可调整大小
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
         
         # 创建主框架
-        main_frame = ttk.Frame(root, padding="10")
+        main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky="nsew")
+        
+        # 语言切换按钮
+        lang_btn = ttk.Button(main_frame, 
+                            text=self.texts[self.current_lang]['switch_lang'],
+                            command=self.switch_language)
+        lang_btn.grid(row=0, column=0, sticky="e", pady=5)
+        self.lang_btn = lang_btn
         
         # 文件夹选择区域
         folder_frame = ttk.Frame(main_frame)
-        folder_frame.grid(row=0, column=0, sticky="ew", pady=5)
+        folder_frame.grid(row=1, column=0, sticky="ew", pady=5)
         
         self.folder_path = tk.StringVar()
         folder_entry = ttk.Entry(folder_frame, textvariable=self.folder_path)
@@ -33,7 +131,7 @@ class FileRenamerGUI:
         
         # 命名模式区域
         pattern_frame = ttk.LabelFrame(main_frame, text="命名设置", padding="5")
-        pattern_frame.grid(row=1, column=0, sticky="ew", pady=5)
+        pattern_frame.grid(row=2, column=0, sticky="ew", pady=5)
         
         # 文件名模式输入
         pattern_input_frame = ttk.Frame(pattern_frame)
@@ -55,22 +153,12 @@ class FileRenamerGUI:
         help_frame = ttk.Frame(pattern_frame)
         help_frame.grid(row=1, column=0, columnspan=4, sticky="ew", padx=5)
         
-        help_text = (
-            "文件名规则:\n"
-            "1. 直接输入文件名，将自动添加序号\n"
-            "   例如: 'photo' → photo1, photo2, ...\n"
-            "2. 使用格式化选项自定义序号格式:\n"
-            "   - {: d}  → 1, 2, 3, ...\n"
-            "   - {:02d} → 01, 02, 03, ...\n"
-            "   - {:03d} → 001, 002, 003, ...\n"
-            "   例如: 'photo_{:03d}' → photo_001, photo_002, ..."
-        )
-        help_label = ttk.Label(help_frame, text=help_text, justify="left")
+        help_label = ttk.Label(help_frame, text=self.texts[self.current_lang]['help_text'], justify="left")
         help_label.grid(row=0, column=0, sticky="w")
         
         # 预览区域
         preview_frame = ttk.LabelFrame(main_frame, text="预览", padding="5")
-        preview_frame.grid(row=2, column=0, sticky="nsew", pady=5)
+        preview_frame.grid(row=3, column=0, sticky="nsew", pady=5)
         
         # 创建预览列表
         self.preview_tree = ttk.Treeview(preview_frame, columns=("原文件名", "新文件名"), show="headings")
@@ -88,7 +176,7 @@ class FileRenamerGUI:
         
         # 按钮区域
         btn_frame = ttk.Frame(main_frame)
-        btn_frame.grid(row=3, column=0, sticky="ew", pady=5)
+        btn_frame.grid(row=4, column=0, sticky="ew", pady=5)
         
         preview_btn = ttk.Button(btn_frame, text="预览", command=self.preview_rename)
         preview_btn.pack(side=tk.LEFT, padx=5)
@@ -98,7 +186,21 @@ class FileRenamerGUI:
         
         # 配置主框架的网格权重
         main_frame.grid_columnconfigure(0, weight=1)
-        main_frame.grid_rowconfigure(2, weight=1)
+        main_frame.grid_rowconfigure(3, weight=1)
+
+    def switch_language(self):
+        self.current_lang = 'en' if self.current_lang == 'zh' else 'zh'
+        self.update_ui_texts()
+        
+    def update_ui_texts(self):
+        """更新所有UI元素的文本"""
+        self.update_title()
+        self.lang_btn.configure(text=self.texts[self.current_lang]['switch_lang'])
+        # 更新其他UI元素的文本
+        # ... (更新所有标签、按钮等的文本)
+        
+    def update_title(self):
+        self.root.title(self.texts[self.current_lang]['title'])
 
     def browse_folder(self):
         folder = filedialog.askdirectory()
